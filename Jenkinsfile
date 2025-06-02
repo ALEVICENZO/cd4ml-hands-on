@@ -24,14 +24,15 @@ pipeline {
     stages {
         stage('Install dependencies') {
             steps {
-                // AJUSTE CRÍTICO: Usar o pip do ambiente virtual criado no Dockerfile
+                // AJUSTE: Usar o pip do ambiente virtual criado no Dockerfile
                 sh '/opt/venv/bin/pip install --no-cache-dir -r requirements.txt'
             }
         }
         stage('Run tests') {
             steps {
-                // AJUSTE: Usar o python do ambiente virtual para consistência
-                sh '/opt/venv/bin/python ./run_tests.sh'
+                // AJUSTE CRÍTICO: Chamar o script de shell diretamente.
+                // O script 'run_tests.sh' DEVE ser modificado para ativar o ambiente virtual internamente.
+                sh './run_tests.sh'
             }
         }
         stage('Run ML pipeline') {
