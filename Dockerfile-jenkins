@@ -1,21 +1,53 @@
-FROM jenkins/jenkins:2.347-jdk11
+#FROM jenkins/jenkins:2.440.3-jdk11
+
+#USER jenkins
+#RUN jenkins-plugin-cli --plugins blueocean:1.25.5 build-timestamp:1.0.3 timestamper:1.17 pollscm:1.3.1 github-api:1.321-468.v6a_9f5f2d5a_7e
+#RUN jenkins-plugin-cli --plugins blueocean:1.25.5 build-timestamp:1.0.3 timestamper:1.17 pollscm:1.3.1 github-api:1.303-400.v35c2d8258028
+
+#USER root
+#ENV FLUENTD_HOST "fluentd"
+#ENV FLUENTD_PORT "24224"
+#ENV JAVA_OPTS -Djenkins.install.runSetupWizard=false
+#ENV JENKINS_URL "http://jenkins:10000"
+#ENV ACCESS_KEY ${ACCESS_KEY}
+#ENV SECRET_KEY ${SECRET_KEY}
+
+#COPY ./requirements.txt requirements.txt
+
+#RUN apt update && \
+#    apt install -y python3 python3-pip
+#RUN pip3 install -r requirements.txt
+
+#COPY jenkins/1-configureJenkins.groovy /usr/share/jenkins/ref/init.groovy.d/1-configureJenkins.groovy
+#COPY jenkins/2-addAccessKeys.groovy /usr/share/jenkins/ref/init.groovy.d/2-addAccessKeys.groovy
+
+FROM jenkins/jenkins:lts-jdk21
 
 USER jenkins
-RUN jenkins-plugin-cli --plugins blueocean:1.25.5 build-timestamp:1.0.3 timestamper:1.17 pollscm:1.3.1 github-api:1.303-400.v35c2d8258028
+# Adicionando 'json-path-api' para resolver a dependência do 'Token Macro Plugin'.
+# Permitindo que 'blueocean' e 'github-api' instalem suas versões mais recentes compatíveis.
+RUN jenkins-plugin-cli --plugins blueocean build-timestamp:1.0.3 timestamper pollscm:1.3.1 github-api json-path-api
 
 USER root
 ENV FLUENTD_HOST "fluentd"
 ENV FLUENTD_PORT "24224"
 ENV JAVA_OPTS -Djenkins.install.runSetupWizard=false
-ENV JENKINS_URL "http://jenkins:10000"
+ENV JENKINS_URL "http://localhost:10000"
+# URL do Jenkins atualizada para acesso externo
 ENV ACCESS_KEY ${ACCESS_KEY}
 ENV SECRET_KEY ${SECRET_KEY}
 
 COPY ./requirements.txt requirements.txt
 
 RUN apt update && \
-    apt install -y python3 python3-pip
-RUN pip3 install -r requirements.txt
+    apt install -y python3 python3-pip python3-venv
+
+# Crie um ambiente virtual e instale as dependências dentro dele
+RUN python3 -m venv /opt/venv && \
+    /opt/venv/bin/pip install --no-cache-dir -r requirements.txt
+
+# Altere o usuário de volta para jenkins, se necessário para as próximas etapas
+USER jenkins
 
 COPY jenkins/1-configureJenkins.groovy /usr/share/jenkins/ref/init.groovy.d/1-configureJenkins.groovy
 COPY jenkins/2-addAccessKeys.groovy /usr/share/jenkins/ref/init.groovy.d/2-addAccessKeys.groovy
